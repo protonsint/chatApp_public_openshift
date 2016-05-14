@@ -1,37 +1,18 @@
-http = require('http');
-var express = require('express');
-var fs      = require('fs');
+var express = require('express'),
+	app = express(),
+	server = require('http').createServer(app),
+	io = require('socket.io').listen(server);
 
-var WebApp = function() {
-    var self = this;
-    self.setupVariables = function() {
-        self.ipaddress = process.env.OPENSHIFT_NODEJS_IP;
-        self.port      = process.env.OPENSHIFT_NODEJS_PORT || 3000;
+var ip = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+var port = process.env.OPENSHIFT_NODEJS_PORT || 3000;	
+server.listen(port,ip);
 
-        if (typeof self.ipaddress === "undefined") {
-            self.ipaddress = "127.0.0.1";
-        };
-    };
-    self.initializeServer = function() {
-        self.app = express();
-        self.server= http.createServer(self.app);
-        self.app.use(express.static(__dirname + '/'));
-    };
-
-    self.initialize = function() {
-        self.setupVariables();
-        self.initializeServer();
-    };
-
-    self.start = function() {
-        self.server.listen(self.port, self.ipaddress, function() {
-            console.log('%s: Node server started on %s:%d ...',
-                        Date(Date.now() ), self.ipaddress, self.port);
-        });
-    };
-
-}; 
-
-var zapp = new WebApp();
-zapp.initialize();
-zapp.start();
+app.get('/', function(req, res){
+	res.sendFile(__dirname + '/index.html');
+});
+io.on('connection', function(socket){
+console.log('server is listening...');
+  socket.on('chat message', function(msg){
+    io.emit('chat message', msg);
+  });
+});
